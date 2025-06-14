@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\Game;
+use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,7 +35,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(RouteServiceProvider::HOME);
     }
 
     /**
@@ -41,6 +43,11 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Verificar si el usuario tiene partidas activas como anfitrión
+        if (Game::userHasActiveHostedGames(Auth::id())) {
+            return back()->with('error', 'No puedes cerrar sesión mientras seas anfitrión de una partida activa. Por favor, termina o abandona tus partidas primero.');
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
