@@ -6,6 +6,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -19,6 +20,8 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+
 
 Route::middleware('auth')->group(function () {
     // Perfil de usuario
@@ -44,5 +47,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/statistics', [GamePlayController::class, 'getStatistics'])->name('games.statistics');
     Route::get('/games/{game}/replay', [GamePlayController::class, 'getGameReplay'])->name('games.replay');
 });
+
+// Ruta para cerrar sesión
+Route::post('logout', function () {
+    Auth::logout();
+    
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    
+    return redirect('/');
+})->name('logout');
 
 require __DIR__.'/auth.php';

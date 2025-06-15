@@ -1,0 +1,174 @@
+/* Estilos globales del tema de juego - para componentes compartidos */
+
+:root {
+    --navy-900: #0a192f;
+    --navy-800: #112240;
+    --navy-700: #1d3557;
+    --blue-600: #1e40af;
+    --blue-500: #2a85ff;
+    --blue-400: #4895ef;
+    --blue-300: #90e0ef;
+    --gold: #ffd700;
+    --orange: #FF7D00;
+}
+
+/* Fondo común para páginas del juego */
+.game-page-bg {
+    background-color: #0c182c;
+    background-image: 
+        radial-gradient(circle at 25% 25%, rgba(42, 133, 255, 0.1) 0%, transparent 50%), 
+        radial-gradient(circle at 75% 75%, rgba(255, 215, 0, 0.05) 0%, transparent 50%);
+}
+
+/* Efecto de resplandor para textos */
+.glow-text {
+    text-shadow: 0 0 15px currentColor, 0 0 5px currentColor;
+}
+
+/* Animación de flotación común */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px) scale(1.01);
+    }
+}
+
+/* Animación de pulsación común */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(42, 133, 255, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(42, 133, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(42, 133, 255, 0); }
+}
+
+/* Animación de olas común */
+@keyframes wave {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+@keyframes wave2 {
+    0% {
+        transform: translateX(-50%);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+/* Botón estilo juego común */
+.game-button {
+    position: relative;
+    background: linear-gradient(to bottom, #1e3a8a, #172554);
+    border: 1px solid #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3), 
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    color: #90e0ef;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    overflow: hidden;
+    padding: 0.5rem 1rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent
+    );
+    transition: left 0.7s;
+    pointer-events: none;
+}
+
+.game-button:hover {
+    background: linear-gradient(to bottom, #2563eb, #1e40af);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5), 
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.game-button:hover::before {
+    left: 100%;
+}
+
+.game-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+}
+
+.game-button.primary {
+    background: linear-gradient(to bottom, #3b82f6, #1d4ed8);
+    border-color: #60a5fa;
+}
+
+.game-button.primary:hover {
+    background: linear-gradient(to bottom, #60a5fa, #3b82f6);
+}
+
+.game-button.secondary {
+    background: linear-gradient(to bottom, #475569, #334155);
+    border-color: #64748b;
+}
+
+.game-button.secondary:hover {
+    background: linear-gradient(to bottom, #64748b, #475569);
+}
+
+.game-button.xsmall {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.game-button.exit {
+    background: linear-gradient(to bottom, #7e1d1d, #991b1b);
+    border-color: #f87171;
+}
+
+.game-button.exit:hover {
+    box-shadow: 
+        0 6px 10px rgba(0, 0, 0, 0.3),
+        0 0 20px rgba(248, 113, 113, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.game-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Panel de juego común */
+.game-panel {
+    @apply rounded-lg overflow-hidden shadow-lg;
+    background: linear-gradient(to bottom, rgba(17, 34, 64, 0.95), rgba(10, 20, 40, 0.95));
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+}
+
+.panel-header {
+    @apply px-6 py-4 border-b;
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.panel-content {
+    @apply p-6;
+}
