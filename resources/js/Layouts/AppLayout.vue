@@ -27,7 +27,7 @@
                 CONTROL DE MANDO
               </NavLink>
               <NavLink :href="route('games.index')" :active="route().current('games.*')" class="game-nav-link">
-                MISIONES
+    PARTIDAS
               </NavLink>
             </div>
           </div>

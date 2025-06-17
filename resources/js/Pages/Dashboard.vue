@@ -27,7 +27,7 @@
                   </svg>
                 </div>
                 <div class="stat-content">
-                  <div class="stat-title">Misiones completadas</div>
+                  <div class="stat-title">Partidas completadas</div>
                   <div class="stat-value">{{ stats.totalGames }}</div>
                 </div>
               </div>
@@ -71,16 +71,34 @@
             </div>
             
             <div v-if="stats && stats.totalGames > 0" class="mb-8">
-              <div class="chart-container">
-                <canvas ref="chartCanvas" width="400" height="200"></canvas>
-                <div v-if="!loading" class="chart-labels">
-                  <div class="chart-label success">
-                    <span class="chart-label-dot"></span>
-                    Victorias: {{ stats.wins }}
+              <div class="battle-chart-container">
+                <div class="chart-sector">
+                  <div class="chart-wrapper">
+                    <canvas ref="chartCanvas" width="400" height="200"></canvas>
                   </div>
-                  <div class="chart-label danger">
-                    <span class="chart-label-dot"></span>
-                    Derrotas: {{ stats.losses }}
+                  <div class="chart-data">
+                    <div class="data-header">Informe de batalla</div>
+                    <div class="data-list">
+                      <div class="data-item">
+                        <div class="data-label">Victorias</div>
+                        <div class="data-value success">{{ stats.wins }}</div>
+                        <div class="data-bar">
+                          <div class="bar-fill success" :style="{width: stats.winRate + '%'}"></div>
+                        </div>
+                      </div>
+                      <div class="data-item">
+                        <div class="data-label">Derrotas</div>
+                        <div class="data-value danger">{{ stats.losses }}</div>
+                        <div class="data-bar">
+                          <div class="bar-fill danger" :style="{width: (100 - stats.winRate) + '%'}"></div>
+                        </div>
+                      </div>
+                      <div class="data-divider"></div>
+                      <div class="data-item result">
+                        <div class="data-label">Eficiencia de combate</div>
+                        <div class="data-value" :class="{'success': stats.winRate > 50, 'danger': stats.winRate < 50, 'warning': stats.winRate == 50}">{{ stats.winRate }}%</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -91,7 +109,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                VER MISIONES
+                BUSCAR PARTIDA
               </Link>
               
               <Link :href="route('games.create')" class="game-button success" @mouseenter="playHoverSound">
@@ -439,53 +457,148 @@ export default {
   text-shadow: 0 0 5px rgba(245, 158, 11, 0.5);
 }
 
-/* Contenedor de gráfica */
-.chart-container {
+/* Contenedor de gráfica mejorado */
+.battle-chart-container {
   background-color: rgba(17, 34, 64, 0.6);
-  padding: 1rem;
   border-radius: 8px;
   border: 1px solid rgba(59, 130, 246, 0.3);
-  position: relative;
   margin-top: 1.5rem;
-  height: 300px;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2),
+              inset 0 0 10px rgba(59, 130, 246, 0.05);
 }
 
-.chart-labels {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background-color: rgba(10, 25, 47, 0.8);
-  padding: 0.75rem;
-  border-radius: 4px;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+/* Layout de dos columnas para el sector de gráfico */
+.chart-sector {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 300px;
 }
 
-.chart-label {
+@media (min-width: 768px) {
+  .chart-sector {
+    grid-template-columns: 60% 40%;
+  }
+}
+
+/* Contenedor del gráfico */
+.chart-wrapper {
+  padding: 1rem;
   display: flex;
   align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .chart-wrapper {
+    border-bottom: none;
+    border-right: 1px solid rgba(59, 130, 246, 0.2);
+  }
+}
+
+/* Sección de datos */
+.chart-data {
+  padding: 1rem;
+  background-color: rgba(10, 25, 47, 0.4);
+  display: flex;
+  flex-direction: column;
+}
+
+.data-header {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #90e0ef;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1rem;
+  text-align: center;
+  text-shadow: 0 0 5px rgba(144, 224, 239, 0.3);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+  padding-bottom: 0.5rem;
+}
+
+.data-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+
+.data-item {
+  margin-bottom: 0.75rem;
+}
+
+.data-item.result {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.data-label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-bottom: 0.25rem;
+}
+
+.data-value {
+  font-size: 1.5rem;
+  font-weight: bold;
   margin-bottom: 0.5rem;
-  font-size: 0.875rem;
+  color: #e2e8f0;
 }
 
-.chart-label:last-child {
-  margin-bottom: 0;
+.data-value.success {
+  color: #10b981;
+  text-shadow: 0 0 5px rgba(16, 185, 129, 0.5);
 }
 
-.chart-label-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  margin-right: 0.5rem;
+.data-value.danger {
+  color: #ef4444;
+  text-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
 }
 
-.chart-label.success .chart-label-dot {
-  background-color: rgba(16, 185, 129, 0.7);
-  box-shadow: 0 0 5px rgba(16, 185, 129, 0.7);
+.data-value.warning {
+  color: #f59e0b;
+  text-shadow: 0 0 5px rgba(245, 158, 11, 0.5);
 }
 
-.chart-label.danger .chart-label-dot {
-  background-color: rgba(239, 68, 68, 0.7);
-  box-shadow: 0 0 5px rgba(239, 68, 68, 0.7);
+.data-bar {
+  height: 6px;
+  background-color: rgba(59, 130, 246, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 0.25rem;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 3px;
+}
+
+.bar-fill.success {
+  background: linear-gradient(to right, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.7));
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.bar-fill.danger {
+  background: linear-gradient(to right, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.7));
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+}
+
+.data-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.3), transparent);
+  margin: 0.5rem 0;
+}
+
+/* Ocultar las etiquetas anteriores */
+.chart-labels {
+  display: none;
 }
 
 /* Acciones de juego */
