@@ -94,7 +94,7 @@
               <p class="waiting-subtext">Esperando a que un capitán enemigo se una a la batalla...</p>
               <div class="waiting-code">
                 <span class="code-label">CÓDIGO DE ACCESO:</span>
-                <span class="code-value">{{ window.location.href }}</span>
+                <span class="code-value">{{ signedUrl || currentUrl }}</span>
               </div>
             </div>
 
@@ -119,7 +119,7 @@
                 <div class="board-header">
                   <h3 class="text-lg font-bold text-blue-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                      <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 005.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                     </svg>
                     TU FLOTA
                   </h3>
@@ -269,7 +269,6 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
-import { ref, reactive, onMounted, onBeforeUnmount } from 'vue';
 
 export default {
   components: {
@@ -281,194 +280,183 @@ export default {
     myShips: Array,
     myShots: Array,
     isMyTurn: Boolean,
-    opponentId: Number
+    opponentId: Number,
+    signedUrl: String
   },
-  setup(props) {
-    const gameState = reactive({
-      status: props.game.status,
-      yourTurn: props.isMyTurn,
-      winner: props.game.winner_id,
-      endReason: props.game.end_reason
-    });
-    
-    const shots = ref(props.myShots || []);
-    const opponentShots = ref([]);
-    const pollInterval = ref(null);
-    const loading = ref(false);
-    const showAbandonModal = ref(false);
-    const turnCountdown = ref(props.game.max_response_time || 30);
-    const turnTimer = ref(null);
-    const maxTurnTime = ref(props.game.max_response_time || 30);
-    const abandonLoading = ref(false);
-    const hoverSound = ref(null);
-    const fireSound = ref(null);
-    const hitSound = ref(null);
-    const missSound = ref(null);
-    
-    const window = globalThis.window;
-    
-    const playHoverSound = () => {
-      if (hoverSound.value) {
-        hoverSound.value.currentTime = 0;
-        hoverSound.value.play().catch(e => console.log('Audio play error:', e));
+  data() {
+    return {
+      currentUrl: '', // Añadir esta línea
+      gameState: {
+        status: this.game.status,
+        yourTurn: this.isMyTurn,
+        winner: this.game.winner_id,
+        endReason: this.game.end_reason
+      },
+      shots: this.myShots || [],
+      opponentShots: [],
+      pollInterval: null,
+      loading: false,
+      showAbandonModal: false,
+      turnCountdown: this.game.max_response_time || 30,
+      turnTimer: null,
+      maxTurnTime: this.game.max_response_time || 30,
+      abandonLoading: false,
+      hoverSound: null,
+      fireSound: null,
+      hitSound: null,
+      missSound: null
+    };
+  },
+  methods: {
+    playHoverSound() {
+      if (this.hoverSound) {
+        this.hoverSound.currentTime = 0;
+        this.hoverSound.play().catch(e => console.log('Audio play error:', e));
       }
-    };
-    
-    const playFireSound = () => {
-      if (fireSound.value) {
-        fireSound.value.currentTime = 0;
-        fireSound.value.play().catch(e => console.log('Audio play error:', e));
+    },
+    playFireSound() {
+      if (this.fireSound) {
+        this.fireSound.currentTime = 0;
+        this.fireSound.play().catch(e => console.log('Audio play error:', e));
       }
-    };
-    
-    const playHitSound = () => {
-      if (hitSound.value) {
-        hitSound.value.currentTime = 0;
-        hitSound.value.play().catch(e => console.log('Audio play error:', e));
+    },
+    playHitSound() {
+      if (this.hitSound) {
+        this.hitSound.currentTime = 0;
+        this.hitSound.play().catch(e => console.log('Audio play error:', e));
       }
-    };
-    
-    const playMissSound = () => {
-      if (missSound.value) {
-        missSound.value.currentTime = 0;
-        missSound.value.play().catch(e => console.log('Audio play error:', e));
+    },
+    playMissSound() {
+      if (this.missSound) {
+        this.missSound.currentTime = 0;
+        this.missSound.play().catch(e => console.log('Audio play error:', e));
       }
-    };
-    
-    const startPolling = () => {
-      pollInterval.value = setInterval(() => {
-        pollGameStatus();
-      }, 2000); // Cada 2 segundos
-    };
-    
-    const stopPolling = () => {
-      clearInterval(pollInterval.value);
-    };
-    
-    const pollGameStatus = async () => {
+    },
+    startPolling() {
+      this.pollInterval = setInterval(() => {
+        this.pollGameStatus();
+      }, 2000);
+    },
+    stopPolling() {
+      clearInterval(this.pollInterval);
+    },
+    async pollGameStatus() {
       try {
-        const response = await axios.get(route('games.poll', props.game.id));
+        const response = await axios.get(route('games.poll', this.game.id));
         const data = response.data;
         
-        const previousTurn = gameState.yourTurn;
+        const previousTurn = this.gameState.yourTurn;
         
         // Actualizar el estado del juego
-        gameState.status = data.status;
-        gameState.yourTurn = data.yourTurn;
-        gameState.winner = data.winner;
-        gameState.endReason = data.endReason;
+        this.gameState.status = data.status;
+        this.gameState.yourTurn = data.yourTurn;
+        this.gameState.winner = data.winner;
+        this.gameState.endReason = data.endReason;
         
         // Si acaba de cambiar a mi turno, iniciar el temporizador
-        if (!previousTurn && gameState.yourTurn) {
-          startTurnTimer();
+        if (!previousTurn && this.gameState.yourTurn) {
+          this.startTurnTimer();
         }
         
         // Si ya no es mi turno, detener el temporizador
-        if (previousTurn && !gameState.yourTurn) {
-          stopTurnTimer();
+        if (previousTurn && !this.gameState.yourTurn) {
+          this.stopTurnTimer();
         }
         
         // Si hay un nuevo disparo del oponente, actualizarlo
         if (data.lastOpponentShot && 
-            !opponentShots.value.some(shot => shot.id === data.lastOpponentShot.id)) {
-          opponentShots.value.push(data.lastOpponentShot);
+            !this.opponentShots.some(shot => shot.id === data.lastOpponentShot.id)) {
+          this.opponentShots.push(data.lastOpponentShot);
           
           // Reproducir sonido según el resultado
           if (data.lastOpponentShot.hit) {
-            playHitSound();
+            this.playHitSound();
           } else {
-            playMissSound();
+            this.playMissSound();
           }
         }
         
         // Si el juego terminó, detener el polling
         if (data.status === 'finished') {
-          stopPolling();
+          this.stopPolling();
         }
       } catch (error) {
         console.error('Error al obtener el estado del juego:', error);
       }
-    };
-    
-    const fireShot = async (x, y) => {
+    },
+    async fireShot(x, y) {
       // Verificar si es el turno del jugador y el juego está activo
-      if (!gameState.yourTurn || gameState.status !== 'in_progress') {
+      if (!this.gameState.yourTurn || this.gameState.status !== 'in_progress') {
         return;
       }
       
       // Verificar si ya se disparó en esa posición
-      if (hasShotHere(x, y)) {
+      if (this.hasShotHere(x, y)) {
         return;
       }
       
-      loading.value = true;
-      stopTurnTimer(); // Detener el temporizador cuando se dispara manualmente
-      playFireSound();
+      this.loading = true;
+      this.stopTurnTimer(); // Detener el temporizador cuando se dispara manualmente
+      this.playFireSound();
       
       try {
-        const response = await axios.post(route('games.fire', props.game.id), { x, y });
+        const response = await axios.post(route('games.fire', this.game.id), { x, y });
         
         // Agregar el disparo a la lista
-        shots.value.push(response.data.shot);
+        this.shots.push(response.data.shot);
         
         // Reproducir sonido según el resultado
         setTimeout(() => {
           if (response.data.shot.hit) {
-            playHitSound();
+            this.playHitSound();
           } else {
-            playMissSound();
+            this.playMissSound();
           }
         }, 500);
         
         // Actualizar el estado del juego
-        gameState.yourTurn = false;
+        this.gameState.yourTurn = false;
         
         if (response.data.gameOver) {
-          gameState.status = 'finished';
-          gameState.winner = props.auth.user.id;
-          stopPolling();
+          this.gameState.status = 'finished';
+          this.gameState.winner = this.$page.props.auth.user.id;
+          this.stopPolling();
         }
       } catch (error) {
         console.error('Error al disparar:', error);
       } finally {
-        loading.value = false;
+        this.loading = false;
       }
-    };
-    
-    const hasShip = (x, y) => {
-      return props.myShips.some(ship => ship.x_position === x && ship.y_position === y);
-    };
-    
-    const isShipHit = (x, y) => {
-      const ship = props.myShips.find(ship => ship.x_position === x && ship.y_position === y);
+    },
+    hasShip(x, y) {
+      return this.myShips.some(ship => ship.x_position === x && ship.y_position === y);
+    },
+    isShipHit(x, y) {
+      const ship = this.myShips.find(ship => ship.x_position === x && ship.y_position === y);
       return ship && ship.is_sunk;
-    };
-    
-    const hasShotHere = (x, y) => {
-      return shots.value.some(shot => shot.x_position === x && shot.y_position === y);
-    };
-    
-    const isShotHit = (x, y) => {
-      const shot = shots.value.find(shot => shot.x_position === x && shot.y_position === y);
+    },
+    hasShotHere(x, y) {
+      return this.shots.some(shot => shot.x_position === x && shot.y_position === y);
+    },
+    isShotHit(x, y) {
+      const shot = this.shots.find(shot => shot.x_position === x && shot.y_position === y);
       return shot && shot.hit;
-    };
-    
-    const hasOpponentShotHere = (x, y) => {
-      return opponentShots.value.some(shot => shot.x_position === x && shot.y_position === y);
-    };
-    
-    const getCellClass = (x, y, isMyBoard) => {
+    },
+    hasOpponentShotHere(x, y) {
+      return this.opponentShots.some(shot => shot.x_position === x && shot.y_position === y);
+    },
+    getCellClass(x, y, isMyBoard) {
       let classes = '';
       
       if (isMyBoard) {
-        classes = hasShip(x, y) ? 'has-ship' : '';
-        if (hasOpponentShotHere(x, y)) {
-          classes += isShipHit(x, y) ? ' enemy-hit' : ' enemy-miss';
+        classes = this.hasShip(x, y) ? 'has-ship' : '';
+        if (this.hasOpponentShotHere(x, y)) {
+          classes += this.isShipHit(x, y) ? ' enemy-hit' : ' enemy-miss';
         }
       } else {
-        if (hasShotHere(x, y)) {
-          classes = isShotHit(x, y) ? 'your-hit' : 'your-miss';
-        } else if (gameState.yourTurn && gameState.status === 'in_progress') {
+        if (this.hasShotHere(x, y)) {
+          classes = this.isShotHit(x, y) ? 'your-hit' : 'your-miss';
+        } else if (this.gameState.yourTurn && this.gameState.status === 'in_progress') {
           classes = 'targetable';
         } else {
           classes = 'not-targetable';
@@ -476,9 +464,8 @@ export default {
       }
       
       return classes;
-    };
-    
-    const endReasonText = (reason) => {
+    },
+    endReasonText(reason) {
       const reasons = {
         'abandon': 'Retirada estratégica',
         'host_timeout': 'Tiempo de respuesta agotado',
@@ -487,176 +474,106 @@ export default {
         'victory': 'Misión cumplida'
       };
       return reasons[reason] || 'Operación finalizada';
-    };
-    
-    const startTurnTimer = () => {
-      stopTurnTimer(); // Asegurarse de que no haya un temporizador activo
-      turnCountdown.value = maxTurnTime.value;
+    },
+    startTurnTimer() {
+      this.stopTurnTimer(); // Asegurarse de que no haya un temporizador activo
+      this.turnCountdown = this.maxTurnTime;
       
-      turnTimer.value = setInterval(() => {
-        turnCountdown.value--;
+      this.turnTimer = setInterval(() => {
+        this.turnCountdown--;
         
-        if (turnCountdown.value <= 0) {
-          fireRandomShot();
+        if (this.turnCountdown <= 0) {
+          this.fireRandomShot();
         }
       }, 1000);
-    };
-    
-    const stopTurnTimer = () => {
-      if (turnTimer.value) {
-        clearInterval(turnTimer.value);
-        turnTimer.value = null;
+    },
+    stopTurnTimer() {
+      if (this.turnTimer) {
+        clearInterval(this.turnTimer);
+        this.turnTimer = null;
       }
-      turnCountdown.value = 0;
-    };
-    
-    const fireRandomShot = async () => {
-      stopTurnTimer();
+      this.turnCountdown = 0;
+    },
+    async fireRandomShot() {
+      this.stopTurnTimer();
       
-      if (!gameState.yourTurn || gameState.status !== 'in_progress') {
+      if (!this.gameState.yourTurn || this.gameState.status !== 'in_progress') {
         return;
       }
       
       try {
-        playFireSound();
+        this.playFireSound();
         
-        const response = await axios.post(route('games.fireRandom', props.game.id));
+        const response = await axios.post(route('games.fireRandom', this.game.id));
         
         // Agregar el disparo a la lista
-        shots.value.push(response.data.shot);
+        this.shots.push(response.data.shot);
         
         // Reproducir sonido según el resultado
         setTimeout(() => {
           if (response.data.shot.hit) {
-            playHitSound();
+            this.playHitSound();
           } else {
-            playMissSound();
+            this.playMissSound();
           }
         }, 500);
         
         // Actualizar el estado del juego
-        gameState.yourTurn = false;
+        this.gameState.yourTurn = false;
         
         if (response.data.gameOver) {
-          gameState.status = 'finished';
-          gameState.winner = props.auth.user.id;
-          stopPolling();
+          this.gameState.status = 'finished';
+          this.gameState.winner = this.props.auth.user.id;
+          this.stopPolling();
         }
       } catch (error) {
         console.error('Error al realizar disparo aleatorio:', error);
       }
-    };
-    
-    const abandonGame = async () => {
-      abandonLoading.value = true;
+    },
+    async abandonGame() {
+      this.abandonLoading = true;
       
       try {
-        await axios.post(route('games.abandon', props.game.id));
+        await axios.post(route('games.abandon', this.game.id));
         
-        showAbandonModal.value = false;
-        gameState.status = 'finished';
-        gameState.winner = props.opponentId;
-        gameState.endReason = 'abandon';
-        stopPolling();
+        this.showAbandonModal = false;
+        this.gameState.status = 'finished';
+        this.gameState.winner = this.opponentId;
+        this.gameState.endReason = 'abandon';
+        this.stopPolling();
         
         // Redireccionar a la lista de juegos
         router.visit(route('games.index'));
       } catch (error) {
         console.error('Error al abandonar la partida:', error);
       } finally {
-        abandonLoading.value = false;
+        this.abandonLoading = false;
       }
-    };
-    
-    // Añadir función para mostrar nombre del escenario
-    const scenarioName = (scenario) => {
+    },
+    scenarioName(scenario) {
       const names = {
         'classic': 'Océano Clásico',
         'foggy': 'Mares de Niebla',
         'stormy': 'Tormenta Tropical'
       };
       return names[scenario] || 'Desconocido';
-    };
+    }
+  },
+  mounted() {
+    // Inicializar la URL aquí
+    this.currentUrl = window.location.href;
     
-    onMounted(() => {
-      try {
-        // Inicializar sonidos
-        hoverSound.value = new Audio('/sounds/hover.mp3');
-        hoverSound.value.volume = 0.2;
-        
-        fireSound.value = new Audio('/sounds/fire.mp3');
-        fireSound.value.volume = 0.4;
-        
-        hitSound.value = new Audio('/sounds/hit.mp3');
-        hitSound.value.volume = 0.4;
-        
-        missSound.value = new Audio('/sounds/miss.mp3');
-        missSound.value.volume = 0.3;
-        
-        // Añadir sonidos específicos según el escenario
-        if (props.game.scenario === 'stormy') {
-          setTimeout(() => {
-            try {
-              const stormSound = new Audio('/sounds/storm.mp3');
-              stormSound.volume = 0.2;
-              stormSound.loop = true;
-              stormSound.play().catch(e => console.log('Storm audio error:', e));
-            } catch (e) {
-              console.log('Storm audio initialization error:', e);
-            }
-          }, 1000);
-        } else if (props.game.scenario === 'foggy') {
-          setTimeout(() => {
-            try {
-              const fogSound = new Audio('/sounds/fog.mp3');
-              fogSound.volume = 0.2;
-              fogSound.loop = true;
-              fogSound.play().catch(e => console.log('Fog audio error:', e));
-            } catch (e) {
-              console.log('Fog audio initialization error:', e);
-            }
-          }, 1000);
-        }
-      } catch (e) {
-        console.log('Audio initialization error:', e);
-      }
-      
-      // Iniciar el polling
-      startPolling();
-      
-      // Iniciar temporizador si es mi turno
-      if (gameState.yourTurn && gameState.status === 'in_progress') {
-        startTurnTimer();
-      }
-    });
+    // Iniciar el polling
+    this.startPolling();
     
-    onBeforeUnmount(() => {
-      stopPolling();
-      stopTurnTimer();
-    });
-    
-    return {
-      gameState,
-      shots,
-      opponentShots,
-      loading,
-      showAbandonModal,
-      turnCountdown,
-      maxTurnTime,
-      abandonLoading,
-      window,
-      hasShip,
-      isShipHit,
-      hasShotHere,
-      isShotHit,
-      hasOpponentShotHere,
-      getCellClass,
-      endReasonText,
-      fireShot,
-      abandonGame,
-      playHoverSound,
-      scenarioName
-    };
+    // Iniciar temporizador si es mi turno
+    if (this.gameState.yourTurn && this.gameState.status === 'in_progress') {
+      this.startTurnTimer();
+    }
+  },
+  beforeUnmount() {
+    this.stopPolling();
+    this.stopTurnTimer();
   }
 };
 </script>

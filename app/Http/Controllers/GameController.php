@@ -8,6 +8,7 @@ use App\Models\Shot;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 
 class GameController extends Controller
@@ -19,6 +20,11 @@ class GameController extends Controller
             ->where('host_id', '!=', Auth::id())
             ->get();
             
+        // Añadir URLs firmadas a cada juego
+        $games->each(function ($game) {
+            $game->signed_url = URL::signedRoute('games.join', ['game' => $game->id]);
+        });
+        
         $myGames = Game::with(['host', 'guest', 'winner'])
             ->where(function ($query) {
                 $query->where('host_id', Auth::id())
@@ -79,7 +85,7 @@ class GameController extends Controller
         // Comprobar si el usuario puede ver este juego
         if ($game->host_id !== Auth::id() && $game->guest_id !== Auth::id()) {
             if ($game->status === 'waiting') {
-                // Si el juego está esperando un jugador, permitir unirse
+                // Si el juego está esperando un jugador, permitir unirse con una URL firmada
                 return Inertia::render('Games/Join', [
                     'game' => $game->load('host'),
                     'showRules' => true
@@ -87,6 +93,12 @@ class GameController extends Controller
             }
             
             abort(403, 'No tienes acceso a este juego');
+        }
+
+        // Generar URL firmada para compartir si el usuario es el anfitrión
+        $signedUrl = null;
+        if ($game->host_id === Auth::id() && $game->status === 'waiting') {
+            $signedUrl = URL::signedRoute('games.join', ['game' => $game->id]);
         }
 
         // Cargar datos según el estado del juego
@@ -105,12 +117,15 @@ class GameController extends Controller
             'myShips' => $myShips,
             'myShots' => $myShots,
             'isMyTurn' => $this->isPlayerTurn($game),
-            'opponentId' => $opponentId
+            'opponentId' => $opponentId,
+            'signedUrl' => $signedUrl
         ]);
     }
 
-    public function join(Game $game)
+    public function join(Request $request, Game $game)
     {
+        // La verificación de firma ya está hecha por el middleware 'signed'
+        
         // Verificar que el juego esté disponible
         if ($game->status !== 'waiting' || $game->guest_id !== null) {
             return redirect()->route('games.index')

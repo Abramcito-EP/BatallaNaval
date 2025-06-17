@@ -56,7 +56,6 @@
           <div class="panel-footer">
             <button 
               @click="showRules = false; playClickSound()" 
-              @mouseenter="playHoverSound" 
               class="game-button primary"
             >
               <span class="button-glow"></span>
@@ -94,7 +93,6 @@
                       id="scenario" 
                       v-model="form.scenario" 
                       class="game-input"
-                      @mouseenter="playHoverSound"
                       @change="playClickSound"
                     >
                       <option value="classic">Océano Clásico</option>
@@ -144,7 +142,6 @@
                     type="submit" 
                     class="game-button primary pulse-animation" 
                     :disabled="form.processing"
-                    @mouseenter="playHoverSound"
                     @click="playClickSound"
                   >
                     <span class="button-glow"></span>
@@ -157,7 +154,6 @@
                     type="button" 
                     class="game-button help"
                     @click="showRules = true"
-                    @mouseenter="playHoverSound"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
@@ -240,86 +236,68 @@ export default {
       default: true
     }
   },
-  setup(props) {
-    const form = useForm({
-      scenario: 'classic',
-      max_response_time: 30
-    });
-    
-    const showRulesState = ref(props.showRules);
-    const hoverSound = ref(null);
-    const clickSound = ref(null);
-    
-    function playHoverSound() {
-      if (hoverSound.value) {
-        hoverSound.value.currentTime = 0;
-        hoverSound.value.play().catch(e => console.log('Audio play error:', e));
-      }
-    }
-    
-    function playClickSound() {
-      if (clickSound.value) {
-        clickSound.value.currentTime = 0;
-        clickSound.value.play().catch(e => console.log('Audio play error:', e));
-      }
-    }
-    
-    function submit() {
-      form.post(route('games.store'));
-    }
-    
-    onMounted(() => {
-      // Inicializar sonidos
-      try {
-        hoverSound.value = new Audio('/sounds/hover.mp3');
-        hoverSound.value.volume = 0.2;
-        clickSound.value = new Audio('/sounds/click.mp3');
-        clickSound.value.volume = 0.3;
-      } catch (e) {
-        console.log('Audio initialization error:', e);
-      }
-
-      // Inicializar partículas de fondo
-      if (typeof particlesJS !== 'undefined') {
-        try {
-          particlesJS("game-particles", {
-            particles: {
-              number: { value: 40, density: { enable: true, value_area: 800 } },
-              color: { value: "#ffffff" },
-              shape: { type: "circle", },
-              opacity: { value: 0.3, random: true, },
-              size: { value: 2, random: true, },
-              line_linked: {
-                enable: true, distance: 150, color: "#2a85ff", opacity: 0.2, width: 1
-              },
-              move: {
-                enable: true, speed: 1, direction: "none",
-                random: false, straight: false, out_mode: "out", bounce: false,
-              }
-            },
-            interactivity: {
-              detect_on: "canvas",
-              events: {
-                onhover: { enable: true, mode: "grab" },
-                onclick: { enable: false },
-                resize: true
-              },
-            },
-            retina_detect: true
-          });
-        } catch (e) {
-          console.log('ParticleJS initialization error:', e);
-        }
-      }
-    });
-    
+  data() {
     return {
-      form,
-      showRules: showRulesState,
-      playHoverSound,
-      playClickSound,
-      submit
+      form: useForm({
+        scenario: 'classic',
+        max_response_time: 30
+      }),
+      showRules: this.showRules,
+      hoverSound: null,
+      clickSound: null
     };
+  },
+  methods: {
+    playHoverSound() {
+      if (this.hoverSound) {
+        this.hoverSound.currentTime = 0;
+        this.hoverSound.play().catch(e => console.log('Audio play error:', e));
+      }
+    },
+    playClickSound() {
+      if (this.clickSound) {
+        this.clickSound.currentTime = 0;
+        this.clickSound.play().catch(e => console.log('Audio play error:', e));
+      }
+    },
+    submit() {
+      this.form.post(route('games.store'));
+    }
+  },
+  mounted() {
+
+    // Inicializar partículas de fondo
+    if (typeof particlesJS !== 'undefined') {
+      try {
+        particlesJS("game-particles", {
+          particles: {
+            number: { value: 40, density: { enable: true, value_area: 800 } },
+            color: { value: "#ffffff" },
+            shape: { type: "circle", },
+            opacity: { value: 0.3, random: true, },
+            size: { value: 2, random: true, },
+            line_linked: {
+              enable: true, distance: 150, color: "#2a85ff", opacity: 0.2, width: 1
+            },
+            move: {
+              enable: true, speed: 1, direction: "none",
+              random: false, straight: false, out_mode: "out", bounce: false,
+            }
+          },
+          interactivity: {
+            detect_on: "canvas",
+            events: {
+              onhover: { enable: true, mode: "grab" },
+              onclick: { enable: false },
+              resize: true
+            },
+          },
+          retina_detect: true
+        });
+      } catch (e) {
+        console.log('ParticleJS initialization error:', e);
+      }
+    }
   }
 };
 </script>

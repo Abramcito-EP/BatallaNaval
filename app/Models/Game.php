@@ -68,4 +68,14 @@ class Game extends Model
         ->whereIn('status', ['waiting', 'in_progress'])
         ->exists();
     }
+
+    public static function userIsInActiveGame($userId)
+    {
+        return self::where(function ($query) use ($userId) {
+                $query->where('host_id', $userId)
+                    ->orWhere('guest_id', $userId);
+            })
+            ->whereIn('status', ['waiting', 'in_progress'])
+            ->exists();
+    }
 }

@@ -105,14 +105,14 @@
             </div>
             
             <div class="game-actions">
-              <Link :href="route('games.index')" class="game-button primary" @mouseenter="playHoverSound">
+              <Link :href="route('games.index')" class="game-button primary">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
                 BUSCAR PARTIDA
               </Link>
               
-              <Link :href="route('games.create')" class="game-button success" @mouseenter="playHoverSound">
+              <Link :href="route('games.create')" class="game-button success">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
@@ -137,47 +137,54 @@ export default {
     AppLayout,
     Link
   },
-  setup() {
-    const loading = ref(true);
-    const stats = ref(null);
-    const chartCanvas = ref(null);
-    const hoverSound = ref(null);
-    
-    const playHoverSound = () => {
-      if (hoverSound.value) {
-        hoverSound.value.currentTime = 0;
-        hoverSound.value.play().catch(e => console.log('Audio play error:', e));
-      }
+  data() {
+    return {
+      loading: true,
+      stats: null,
+      chartCanvas: null,
+      hoverSound: null
     };
-    
-    const fetchStats = async () => {
+  },
+  methods: {
+    playHoverSound() {
+      if (this.hoverSound) {
+        this.hoverSound.currentTime = 0;
+        this.hoverSound.play().catch(e => console.log('Audio play error:', e));
+      }
+    },
+    async fetchStats() {
       try {
         const response = await axios.get(route('games.statistics'));
-        stats.value = response.data;
+        this.stats = response.data;
         
         setTimeout(() => {
-          if (stats.value && stats.value.totalGames > 0 && chartCanvas.value) {
-            createChart();
+          if (this.stats && this.stats.totalGames > 0 && this.$refs.chartCanvas) {
+            this.createChart();
+            // Iniciamos la animación solo una vez
+            this.startChartAnimation();
           }
-          loading.value = false;
+          this.loading = false;
         }, 500);
       } catch (error) {
         console.error('Error al obtener estadísticas:', error);
-        loading.value = false;
+        this.loading = false;
       }
-    };
-    
-    const createChart = () => {
-      const canvas = chartCanvas.value;
+    },
+    createChart() {
+      // Mantén el código existente de createChart pero
+      // elimina la línea:
+      // requestAnimationFrame(this.animateChart);
+      
+      const canvas = this.$refs.chartCanvas;
       const ctx = canvas.getContext('2d');
       
       // Limpiar el canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       // Datos
-      const total = stats.value.totalGames;
-      const wins = stats.value.wins;
-      const losses = stats.value.losses;
+      const total = this.stats.totalGames;
+      const wins = this.stats.wins;
+      const losses = this.stats.losses;
       
       // Calcular los ángulos para el gráfico de pastel
       const winAngle = (wins / total) * Math.PI * 2;
@@ -282,28 +289,30 @@ export default {
       ctx.strokeStyle = "rgba(59, 130, 246, 0.8)";
       ctx.lineWidth = 3;
       ctx.stroke();
-      
-      // Configurar animación
-      requestAnimationFrame(createChart);
-    };
-    
-    onMounted(() => {
-      try {
-        hoverSound.value = new Audio('/sounds/hover.mp3');
-        hoverSound.value.volume = 0.2;
-      } catch (e) {
-        console.log('Audio initialization error:', e);
+    },
+    startChartAnimation() {
+      // Guardamos la referencia para poder cancelarla después
+      this.animationFrame = requestAnimationFrame(this.animateChart);
+    },
+    animateChart() {
+      this.createChart();
+      // Guardamos la referencia para poder cancelarla
+      this.animationFrame = requestAnimationFrame(this.animateChart);
+    },
+    stopChartAnimation() {
+      if (this.animationFrame) {
+        cancelAnimationFrame(this.animationFrame);
+        this.animationFrame = null;
       }
-      
-      fetchStats();
-    });
-    
-    return {
-      loading,
-      stats,
-      chartCanvas,
-      playHoverSound
-    };
+    }
+  },
+  mounted() {
+    this.fetchStats();
+    this.chartCanvas = this.$refs.chartCanvas;
+  },
+  beforeUnmount() {
+    // Limpiamos la animación cuando el componente se destruye
+    this.stopChartAnimation();
   }
 };
 </script>

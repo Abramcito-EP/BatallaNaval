@@ -14,7 +14,7 @@
         <div class="flex justify-between h-16">
           <div class="flex">
             <div class="shrink-0 flex items-center">
-              <Link :href="route('dashboard')" class="text-xl font-bold">
+              <Link href="/" class="text-xl font-bold">
                 <div class="game-logo">
                   <span class="text-yellow-400 glow-text">BATALLA</span> 
                   <span class="text-blue-300 glow-text">NAVAL</span>
@@ -53,9 +53,9 @@
                     <DropdownLink :href="route('profile.edit')" class="game-dropdown-link"> 
                       PERFIL DE ALMIRANTE 
                     </DropdownLink>
-                    <DropdownLink :href="route('logout')" method="post" as="button" class="game-dropdown-link">
+                    <Link :href="route('logout')" method="post" as="button" class="game-dropdown-link">
                       ABANDONAR EL PUENTE
-                    </DropdownLink>
+                    </Link>
                   </div>
                 </template>
               </Dropdown>
@@ -94,14 +94,24 @@
             <ResponsiveNavLink :href="route('profile.edit')" class="mobile-game-link"> 
               PERFIL DE ALMIRANTE 
             </ResponsiveNavLink>
-            <ResponsiveNavLink :href="route('logout')" method="post" as="button" class="mobile-game-link">
+            <Link :href="route('logout')" method="post" as="button" class="mobile-game-link">
               ABANDONAR EL PUENTE
-            </ResponsiveNavLink>
+            </Link>
           </div>
         </div>
       </div>
     </nav>
 
+    <!-- Añadir después del nav pero antes del header -->
+    <div v-if="$page.props.flash?.error" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+      <div class="game-alert error">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span>{{ $page.props.flash.error }}</span>
+      </div>
+    </div>
+    
     <header v-if="$slots.header" class="relative z-10 bg-navy-800 bg-opacity-80 shadow-lg border-b border-blue-500 border-opacity-30">
       <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
         <slot name="header" />
@@ -315,6 +325,9 @@ export default {
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
   padding: 0.5rem 0;
   border-radius: 4px;
+  z-index: 9999 !important;
+  position: relative;
+  pointer-events: auto !important;
 }
 
 .game-dropdown-link {
@@ -325,11 +338,14 @@ export default {
   font-weight: 600;
   letter-spacing: 1px;
   transition: all 0.15s ease;
+  position: relative;
+  z-index: 10000 !important;
+  pointer-events: auto !important;
 }
 
 .game-dropdown-link:hover {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #ffffff;
+  background-color: rgba(59, 130, 246, 0.2);
+  color: white;
   text-shadow: 0 0 5px rgba(144, 224, 239, 0.5);
 }
 
@@ -440,5 +456,80 @@ export default {
   100% {
     transform: translateX(0);
   }
+}
+
+/* Agregar o modificar estas reglas para arreglar el dropdown */
+
+/* Para el contenedor principal del dropdown */
+.ml-3.relative {
+  z-index: 9999 !important;
+  position: relative;
+}
+
+/* Para el contenido del dropdown */
+.game-dropdown {
+  background-color: var(--navy-900);
+  border: 1px solid #3b82f6;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  padding: 0.5rem 0;
+  border-radius: 4px;
+  z-index: 9999 !important;
+  position: relative;
+  pointer-events: auto !important;
+}
+
+/* Para los enlaces dentro del dropdown */
+.game-dropdown-link {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: #90e0ef;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  transition: all 0.15s ease;
+  position: relative;
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+}
+
+.game-dropdown-link:hover {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: white;
+  text-shadow: 0 0 5px rgba(144, 224, 239, 0.5);
+}
+
+/* Asegurarse que las partículas y ondas no bloqueen */
+#particles-js, .wave-container {
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+/* Asegurarse que el panel de contenido esté por debajo */
+.game-panel, main.relative {
+  z-index: 5 !important;
+}
+
+/* Estilos existentes... */
+
+/* Agregar estos estilos para las alertas */
+.game-alert {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 4px;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.game-alert.error {
+  background-color: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>

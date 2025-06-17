@@ -14,13 +14,13 @@
               <h3 class="text-lg font-bold text-green-400">¡Contacto enemigo establecido!</h3>
               <p class="text-blue-300">{{ opponentName }} se ha unido a tu partida. ¿Quieres dirigirte a la zona de combate?</p>
               <div class="mt-3 flex space-x-3">
-                <button @click="goToGame" class="game-button primary" @mouseenter="playHoverSound">
+                <button @click="goToGame" class="game-button primary">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
                   DIRIGIRSE A LA BATALLA
                 </button>
-                <button @click="closeAlert" class="game-button secondary" @mouseenter="playHoverSound">
+                <button @click="closeAlert" class="game-button secondary">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -50,7 +50,7 @@
               </h3>
 
               <div class="action-buttons">
-                <Link v-if="!hasActiveHostedGame" :href="route('games.create')" class="game-button success" @mouseenter="playHoverSound">
+                <Link v-if="!hasActiveHostedGame" :href="route('games.create')" class="game-button success">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
@@ -97,9 +97,9 @@
                 </div>
                 
                 <div class="mission-action">
-                  <Link :href="route('games.show', game.id)" class="join-button" @mouseenter="playHoverSound">
+                  <Link :href="game.signed_url" method="post" as="button" class="join-button">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14" />
                     </svg>
                     UNIRSE
                   </Link>
@@ -152,7 +152,7 @@
                   <Link v-if="game.status !== 'waiting' || game.host_id === $page.props.auth.user.id" 
                         :href="route('games.show', game.id)" 
                         class="action-button"
-                        @mouseenter="playHoverSound">
+                        >
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
@@ -171,7 +171,6 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
-import { ref, onMounted, onBeforeUnmount } from 'vue';
 
 export default {
   components: {
@@ -183,140 +182,103 @@ export default {
     myGames: Array,
     hasActiveHostedGame: Boolean
   },
-  setup(props) {
-    const showOpponentJoinedAlert = ref(false);
-    const opponentName = ref('');
-    const joinedGameId = ref(null);
-    const pollInterval = ref(null);
-    const alertCountdown = ref(30);
-    const countdownInterval = ref(null);
-    const hoverSound = ref(null);
-    
-    const playHoverSound = () => {
-      if (hoverSound.value) {
-        hoverSound.value.currentTime = 0;
-        hoverSound.value.play().catch(e => console.log('Audio play error:', e));
-      }
+  data() {
+    return {
+      showOpponentJoinedAlert: false,
+      opponentName: '',
+      joinedGameId: null,
+      pollInterval: null,
+      alertCountdown: 30,
+      countdownInterval: null
+      // Eliminar hoverSound
     };
-    
-    const scenarioName = (scenario) => {
+  },
+  methods: {
+    // Eliminar playHoverSound method
+    scenarioName(scenario) {
       const names = {
         classic: 'Clásico',
         foggy: 'Niebla de Guerra',
         stormy: 'Tormenta'
       };
       return names[scenario] || scenario;
-    };
-    
-    const scenarioClass = (scenario) => {
+    },
+    scenarioClass(scenario) {
       return {
         'classic': 'scenario-classic',
         'foggy': 'scenario-foggy',
         'stormy': 'scenario-stormy'
       }[scenario] || '';
-    };
-    
-    const startPolling = () => {
-      pollInterval.value = setInterval(() => {
-        checkOpponentJoined();
-      }, 2000); // Cada 2 segundos
-    };
-    
-    const stopPolling = () => {
-      if (pollInterval.value) {
-        clearInterval(pollInterval.value);
-        pollInterval.value = null;
+    },
+    startPolling() {
+      this.pollInterval = setInterval(() => {
+        this.checkOpponentJoined();
+      }, 2000);
+    },
+    stopPolling() {
+      if (this.pollInterval) {
+        clearInterval(this.pollInterval);
+        this.pollInterval = null;
       }
-    };
-    
-    const checkOpponentJoined = async () => {
+    },
+    async checkOpponentJoined() {
       try {
         const response = await axios.get(route('games.checkOpponentJoined'));
-        if (response.data.opponentJoined && !showOpponentJoinedAlert.value) {
-          opponentName.value = response.data.opponentName;
-          joinedGameId.value = response.data.gameId;
-          showOpponentJoinedAlert.value = true;
-          startCountdown();
-          stopPolling(); // Detener el polling una vez que se encuentra un oponente
+        if (response.data.opponentJoined && !this.showOpponentJoinedAlert) {
+          this.opponentName = response.data.opponentName;
+          this.joinedGameId = response.data.gameId;
+          this.showOpponentJoinedAlert = true;
+          this.startCountdown();
+          this.stopPolling();
         }
       } catch (error) {
         console.error('Error al verificar oponentes:', error);
       }
-    };
-    
-    const startCountdown = () => {
-      alertCountdown.value = 30;
-      countdownInterval.value = setInterval(() => {
-        alertCountdown.value--;
-        if (alertCountdown.value <= 0) {
-          timeExpired();
+    },
+    startCountdown() {
+      this.alertCountdown = 30;
+      this.countdownInterval = setInterval(() => {
+        this.alertCountdown--;
+        if (this.alertCountdown <= 0) {
+          this.timeExpired();
         }
       }, 1000);
-    };
-    
-    const stopCountdown = () => {
-      if (countdownInterval.value) {
-        clearInterval(countdownInterval.value);
-        countdownInterval.value = null;
+    },
+    stopCountdown() {
+      if (this.countdownInterval) {
+        clearInterval(this.countdownInterval);
+        this.countdownInterval = null;
       }
-    };
-    
-    const goToGame = () => {
-      stopCountdown();
-      router.visit(route('games.show', joinedGameId.value));
-    };
-    
-    const closeAlert = () => {
-      showOpponentJoinedAlert.value = false;
-      // No detener el temporizador, seguirá contando en segundo plano
-    };
-    
-    const timeExpired = async () => {
-      stopCountdown();
-      showOpponentJoinedAlert.value = false;
+    },
+    goToGame() {
+      this.stopCountdown();
+      router.visit(route('games.show', this.joinedGameId));
+    },
+    closeAlert() {
+      this.showOpponentJoinedAlert = false;
+    },
+    async timeExpired() {
+      this.stopCountdown();
+      this.showOpponentJoinedAlert = false;
       
       try {
-        // Abandonar automáticamente el juego si expira el tiempo
-        await axios.post(route('games.abandon', joinedGameId.value), {
+        await axios.post(route('games.abandon', this.joinedGameId), {
           reason: 'host_timeout'
         });
-        
-        // Actualizar la lista de juegos
         router.reload();
       } catch (error) {
         console.error('Error al abandonar juego por timeout:', error);
       }
-    };
-    
-    onMounted(() => {
-      try {
-        hoverSound.value = new Audio('/sounds/hover.mp3');
-        hoverSound.value.volume = 0.2;
-      } catch (e) {
-        console.log('Audio initialization error:', e);
-      }
-      
-      // Iniciar polling para verificar si un oponente se unió
-      if (props.hasActiveHostedGame) {
-        startPolling();
-      }
-    });
-    
-    onBeforeUnmount(() => {
-      stopPolling();
-      stopCountdown();
-    });
-    
-    return {
-      showOpponentJoinedAlert,
-      opponentName,
-      alertCountdown,
-      scenarioName,
-      scenarioClass,
-      goToGame,
-      closeAlert,
-      playHoverSound
-    };
+    }
+  },
+  mounted() {
+    if (this.hasActiveHostedGame) {
+      this.startPolling();
+    }
+  },
+  beforeUnmount() {
+    this.stopPolling();
+    this.stopCountdown();
   }
 };
 </script>

@@ -82,7 +82,6 @@
                                 class="menu-button"
                                 :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
                                 :disabled="form.processing"
-                                @mouseenter="playHoverSound"
                                 @click="playClickSound"
                             >
                                 INICIAR SESIÓN
@@ -92,7 +91,6 @@
                                 v-if="canResetPassword"
                                 :href="route('password.request')"
                                 class="text-blue-300 hover:text-blue-200 text-sm text-center md:text-right transition-colors"
-                                @mouseenter="playHoverSound"
                             >
                                 ¿Olvidaste tu código de acceso?
                             </Link>
@@ -104,7 +102,6 @@
                     <a
                         href="/"
                         class="game-button secondary xsmall"
-                        @mouseenter="playHoverSound"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -115,7 +112,6 @@
                     <Link
                         :href="route('register')"
                         class="game-button secondary xsmall"
-                        @mouseenter="playHoverSound"
                     >
                         NUEVO RECLUTA
                     </Link>
@@ -127,135 +123,117 @@
 
 <script>
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { onMounted, ref } from 'vue';
 
 export default {
-    name: 'Login',
-    components: {
-        Head,
-        Link,
+  name: 'Login',
+  components: {
+    Head,
+    Link,
+  },
+  props: {
+    canResetPassword: {
+      type: Boolean,
     },
-    props: {
-        canResetPassword: {
-            type: Boolean,
-        },
-        status: {
-            type: String,
-        },
+    status: {
+      type: String,
     },
-    setup() {
-        const form = useForm({
-            email: '',
-            password: '',
-            remember: false,
-        });
-
-        const hoverSound = ref(null);
-        const clickSound = ref(null);
-
-        const playHoverSound = () => {
-            if (hoverSound.value) {
-                hoverSound.value.currentTime = 0;
-                hoverSound.value.play().catch(e => console.log('Audio play error:', e));
-            }
-        };
-
-        const playClickSound = () => {
-            if (clickSound.value) {
-                clickSound.value.currentTime = 0;
-                clickSound.value.play().catch(e => console.log('Audio play error:', e));
-            }
-        };
-
-        const submit = () => {
-            form.post(route('login'), {
-                onFinish: () => form.reset('password'),
-            });
-        };
-
-        onMounted(() => {
-            // Inicializar sonidos
-            try {
-                hoverSound.value = new Audio('/sounds/hover.mp3');
-                hoverSound.value.volume = 0.2;
-                clickSound.value = new Audio('/sounds/click.mp3');
-                clickSound.value.volume = 0.3;
-            } catch (e) {
-                console.log('Audio initialization error:', e);
-            }
-
-            // Inicializar particles.js si está disponible
-            if (typeof particlesJS !== 'undefined') {
-                try {
-                    particlesJS("particles-js", {
-                        particles: {
-                            number: {
-                                value: 60,
-                                density: {
-                                    enable: true,
-                                    value_area: 800
-                                }
-                            },
-                            color: {
-                                value: "#ffffff"
-                            },
-                            shape: {
-                                type: "circle",
-                            },
-                            opacity: {
-                                value: 0.5,
-                                random: true,
-                            },
-                            size: {
-                                value: 3,
-                                random: true,
-                            },
-                            line_linked: {
-                                enable: true,
-                                distance: 150,
-                                color: "#2a85ff",
-                                opacity: 0.2,
-                                width: 1
-                            },
-                            move: {
-                                enable: true,
-                                speed: 2,
-                                direction: "none",
-                                random: false,
-                                straight: false,
-                                out_mode: "out",
-                                bounce: false,
-                            }
-                        },
-                        interactivity: {
-                            detect_on: "canvas",
-                            events: {
-                                onhover: {
-                                    enable: true,
-                                    mode: "bubble"
-                                },
-                                onclick: {
-                                    enable: true,
-                                    mode: "push"
-                                },
-                                resize: true
-                            },
-                        },
-                        retina_detect: true
-                    });
-                } catch (e) {
-                    console.log('ParticleJS initialization error:', e);
-                }
-            }
-        });
-
-        return {
-            form,
-            submit,
-            playHoverSound,
-            playClickSound
-        };
+  },
+  data() {
+    return {
+      form: useForm({
+        email: '',
+        password: '',
+        remember: false,
+      }),
+      hoverSound: null,
+      clickSound: null
+    };
+  },
+  methods: {
+    playHoverSound() {
+      if (this.hoverSound) {
+        this.hoverSound.currentTime = 0;
+        this.hoverSound.play().catch(e => console.log('Audio play error:', e));
+      }
+    },
+    playClickSound() {
+      if (this.clickSound) {
+        this.clickSound.currentTime = 0;
+        this.clickSound.play().catch(e => console.log('Audio play error:', e));
+      }
+    },
+    submit() {
+      this.form.post(route('login'), {
+        onFinish: () => this.form.reset('password'),
+      });
     }
+  },
+  mounted() {
+
+    // Inicializar particles.js
+    if (typeof particlesJS !== 'undefined') {
+      try {
+        particlesJS("particles-js", {
+          particles: {
+            number: {
+              value: 60,
+              density: {
+                enable: true,
+                value_area: 800
+              }
+            },
+            color: {
+              value: "#ffffff"
+            },
+            shape: {
+              type: "circle",
+            },
+            opacity: {
+              value: 0.5,
+              random: true,
+            },
+            size: {
+              value: 3,
+              random: true,
+            },
+            line_linked: {
+              enable: true,
+              distance: 150,
+              color: "#2a85ff",
+              opacity: 0.2,
+              width: 1
+            },
+            move: {
+              enable: true,
+              speed: 2,
+              direction: "none",
+              random: false,
+              straight: false,
+              out_mode: "out",
+              bounce: false,
+            }
+          },
+          interactivity: {
+            detect_on: "canvas",
+            events: {
+              onhover: {
+                enable: true,
+                mode: "bubble"
+              },
+              onclick: {
+                enable: true,
+                mode: "push"
+              },
+              resize: true
+            },
+          },
+          retina_detect: true
+        });
+      } catch (e) {
+        console.log('ParticleJS initialization error:', e);
+      }
+    }
+  }
 };
 </script>
 

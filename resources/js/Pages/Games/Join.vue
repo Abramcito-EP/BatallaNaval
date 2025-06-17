@@ -271,7 +271,7 @@ export default {
     }
   },
   mounted() {
-    // Inicializar partículas de fondo
+    // Inicializar partículas de fondo - cambiado de onMounted a mounted
     if (typeof particlesJS !== 'undefined') {
       try {
         particlesJS("game-particles", {

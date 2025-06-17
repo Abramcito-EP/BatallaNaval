@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Models\Game;
+use App\Models\Game; // Asegurarse de que esta línea esté aquí
 use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,8 +44,20 @@ class AuthenticatedSessionController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         // Verificar si el usuario tiene partidas activas como anfitrión
-        if (Game::userHasActiveHostedGames(Auth::id())) {
+        if (Game::where('host_id', Auth::id())
+            ->whereIn('status', ['waiting', 'in_progress'])
+            ->exists()) {
             return back()->with('error', 'No puedes cerrar sesión mientras seas anfitrión de una partida activa. Por favor, termina o abandona tus partidas primero.');
+        }
+        
+        // Verificar si el usuario está en cualquier partida activa (como invitado)
+        if (Game::where(function ($query) {
+                $query->where('host_id', Auth::id())
+                    ->orWhere('guest_id', Auth::id());
+            })
+            ->whereIn('status', ['waiting', 'in_progress'])
+            ->exists()) {
+            return back()->with('error', 'No puedes cerrar sesión mientras estés en una partida activa. Por favor, termina o abandona tu partida actual primero.');
         }
 
         Auth::guard('web')->logout();
