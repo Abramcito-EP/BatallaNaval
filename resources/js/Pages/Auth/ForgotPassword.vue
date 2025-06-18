@@ -1,66 +1,82 @@
 <template>
-    <GuestLayout>
-        <Head title="Forgot Password" />
+    <AppLayout>
+        <template #header>
+            <h2 class="text-xl font-bold text-blue-300 glow-text">RECUPERAR CÓDIGO DE ACCESO</h2>
+        </template>
 
-        <div class="mb-4 text-sm text-gray-600">
-            Forgot your password? No problem. Just let us know your email
-            address and we will email you a password reset link that will allow
-            you to choose a new one.
-        </div>
+        <div class="py-12">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="game-panel max-w-md mx-auto">
+                    <div class="panel-header">
+                        <h2 class="text-xl font-bold text-center">RECUPERACIÓN DE ACCESO</h2>
+                    </div>
+                    
+                    <div class="panel-content">
+                        <div class="mb-4 text-blue-300">
+                            ¿Olvidaste tu código de acceso? No hay problema. Sólo indícanos tu dirección de correo electrónico y te enviaremos un enlace para que puedas elegir uno nuevo.
+                        </div>
 
-        <div
-            v-if="status"
-            class="mb-4 text-sm font-medium text-green-600"
-        >
-            {{ status }}
-        </div>
+                        <div
+                            v-if="status"
+                            class="game-alert success mb-4"
+                        >
+                            {{ status }}
+                        </div>
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
+                        <form @submit.prevent="submit">
+                            <div class="mb-4">
+                                <label for="email" class="game-label">IDENTIFICADOR</label>
+                                <input
+                                    id="email"
+                                    type="email"
+                                    class="game-input"
+                                    v-model="form.email"
+                                    required
+                                    autofocus
+                                    autocomplete="username"
+                                    placeholder="correo@ejemplo.com"
+                                />
+                                <div v-if="form.errors.email" class="game-error">{{ form.errors.email }}</div>
+                            </div>
 
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    v-model="form.email"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
-
-                <InputError class="mt-2" :message="form.errors.email" />
+                            <div class="flex items-center justify-between mt-6">
+                                <Link
+                                    :href="route('login')"
+                                    class="game-button secondary xsmall"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                                    </svg>
+                                    VOLVER
+                                </Link>
+                                
+                                <button
+                                    type="submit"
+                                    class="game-button"
+                                    :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
+                                    :disabled="form.processing"
+                                >
+                                    ENVIAR ENLACE
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
-
-            <div class="mt-4 flex items-center justify-end">
-                <PrimaryButton
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Email Password Reset Link
-                </PrimaryButton>
-            </div>
-        </form>
-    </GuestLayout>
+        </div>
+    </AppLayout>
 </template>
 
 <script>
-import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import AppLayout from '@/Layouts/AppLayout.vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 
 export default {
     name: 'ForgotPassword',
     components: {
-        GuestLayout,
-        InputError,
-        InputLabel,
-        PrimaryButton,
-        TextInput,
+        AppLayout,
         Head,
+        Link,
     },
     props: {
         status: {

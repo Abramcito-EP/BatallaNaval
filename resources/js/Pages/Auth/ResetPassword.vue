@@ -1,88 +1,89 @@
 <template>
-    <GuestLayout>
-        <Head title="Reset Password" />
+    <AppLayout>
+        <template #header>
+            <h2 class="text-xl font-bold text-blue-300 glow-text">RESTABLECER CÓDIGO DE ACCESO</h2>
+        </template>
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
+        <div class="py-12">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="game-panel max-w-md mx-auto">
+                    <div class="panel-header">
+                        <h2 class="text-xl font-bold text-center">NUEVO CÓDIGO DE ACCESO</h2>
+                    </div>
+                    
+                    <div class="panel-content">
+                        <form @submit.prevent="submit">
+                            <div class="mb-4">
+                                <label for="email" class="game-label">IDENTIFICADOR</label>
+                                <input
+                                    id="email"
+                                    type="email"
+                                    class="game-input"
+                                    v-model="form.email"
+                                    required
+                                    autofocus
+                                    autocomplete="username"
+                                    placeholder="correo@ejemplo.com"
+                                />
+                                <div v-if="form.errors.email" class="game-error">{{ form.errors.email }}</div>
+                            </div>
 
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    v-model="form.email"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
+                            <div class="mb-4">
+                                <label for="password" class="game-label">NUEVO CÓDIGO DE ACCESO</label>
+                                <input
+                                    id="password"
+                                    type="password"
+                                    class="game-input"
+                                    v-model="form.password"
+                                    required
+                                    autocomplete="new-password"
+                                    placeholder="••••••••"
+                                />
+                                <div v-if="form.errors.password" class="game-error">{{ form.errors.password }}</div>
+                            </div>
 
-                <InputError class="mt-2" :message="form.errors.email" />
+                            <div class="mb-4">
+                                <label for="password_confirmation" class="game-label">CONFIRMAR CÓDIGO</label>
+                                <input
+                                    id="password_confirmation"
+                                    type="password"
+                                    class="game-input"
+                                    v-model="form.password_confirmation"
+                                    required
+                                    autocomplete="new-password"
+                                    placeholder="••••••••"
+                                />
+                                <div v-if="form.errors.password_confirmation" class="game-error">
+                                    {{ form.errors.password_confirmation }}
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-end mt-6">
+                                <button
+                                    type="submit"
+                                    class="game-button"
+                                    :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
+                                    :disabled="form.processing"
+                                >
+                                    RESTABLECER CÓDIGO
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
-
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
-
-                <TextInput
-                    id="password"
-                    type="password"
-                    class="mt-1 block w-full"
-                    v-model="form.password"
-                    required
-                    autocomplete="new-password"
-                />
-
-                <InputError class="mt-2" :message="form.errors.password" />
-            </div>
-
-            <div class="mt-4">
-                <InputLabel
-                    for="password_confirmation"
-                    value="Confirm Password"
-                />
-
-                <TextInput
-                    id="password_confirmation"
-                    type="password"
-                    class="mt-1 block w-full"
-                    v-model="form.password_confirmation"
-                    required
-                    autocomplete="new-password"
-                />
-
-                <InputError
-                    class="mt-2"
-                    :message="form.errors.password_confirmation"
-                />
-            </div>
-
-            <div class="mt-4 flex items-center justify-end">
-                <PrimaryButton
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Reset Password
-                </PrimaryButton>
-            </div>
-        </form>
-    </GuestLayout>
+        </div>
+    </AppLayout>
 </template>
 
 <script>
-import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
+import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
 export default {
     name: 'ResetPassword',
     components: {
-        GuestLayout,
-        InputError,
-        InputLabel,
-        PrimaryButton,
-        TextInput,
+        AppLayout,
         Head,
     },
     props: {
